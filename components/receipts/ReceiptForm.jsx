@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import LineItemsEditor from "@/components/forms/LineItemsEditor";
 
@@ -10,27 +10,67 @@ const STATUS_OPTIONS = [
   { value: "ready", label: "Ready" },
 ];
 
-export default function ReceiptForm({ products = [], warehouses = [], locations = [] }) {
+export default function ReceiptForm({
+  products = [],
+  warehouses = [],
+  locations = [],
+  profiles = [],
+  mode = "create",
+  receipt = null,
+}) {
   const router = useRouter();
-  const [form, setForm] = useState({
-    reference_no: "REC-" + Date.now().toString().slice(-6),
-    supplier_name: "",
-    warehouse_id: warehouses[0]?.id || "",
-    status: "draft",
-    notes: "",
+  const buildFormState = () => ({
+    reference_no: receipt?.reference_no || "REC-" + Date.now().toString().slice(-6),
+    supplier_name: receipt?.supplier_name || "",
+    warehouse_id: receipt?.warehouse_id || warehouses[0]?.id || "",
+    status: receipt?.status || "draft",
+    notes: receipt?.notes || "",
+    responsible_id: receipt?.responsible_id || "",
+    scheduled_for: toDateTimeLocal(receipt?.scheduled_for),
   });
-  const [items, setItems] = useState([
-    {
-      product_id: products[0]?.id || "",
-      quantity: 1,
-      unit_price: 0,
-      location_id: "",
-    },
-  ]);
+
+  const [form, setForm] = useState(buildFormState);
+  const buildItemsState = () => {
+    if (receipt?.receipt_items?.length) {
+      return receipt.receipt_items.map((item) => ({
+        product_id: item.product_id,
+        quantity: Number(item.quantity) || 0,
+        unit_price: Number(item.unit_price) || 0,
+        location_id: item.location_id || "",
+      }));
+    }
+    return [
+      {
+        product_id: products[0]?.id || "",
+        quantity: 1,
+        unit_price: 0,
+        location_id: "",
+      },
+    ];
+  };
+
+  const [items, setItems] = useState(buildItemsState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const locationOptions = locations.map((loc) => ({ value: loc.id, label: `${loc.name}` }));
+  useEffect(() => {
+    setForm(buildFormState());
+    setItems(buildItemsState());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [receipt]);
+
+  const locationOptions = useMemo(() => {
+    if (!locations?.length) return [];
+    if (!form.warehouse_id) return locations.map((loc) => ({ value: loc.id, label: loc.name }));
+    return locations
+      .filter((loc) => loc.warehouse_id === form.warehouse_id)
+      .map((loc) => ({ value: loc.id, label: loc.name }));
+  }, [locations, form.warehouse_id]);
+
+  const responsibleOptions = useMemo(
+    () => profiles.map((person) => ({ value: person.id, label: person.full_name })),
+    [profiles]
+  );
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -44,6 +84,8 @@ export default function ReceiptForm({ products = [], warehouses = [], locations 
       const payload = {
         ...form,
         status: nextStatus || form.status,
+        responsible_id: form.responsible_id || null,
+        scheduled_for: form.scheduled_for ? new Date(form.scheduled_for).toISOString() : null,
         items: items.map((item) => ({
           product_id: item.product_id,
           quantity: Number(item.quantity) || 0,
@@ -52,8 +94,11 @@ export default function ReceiptForm({ products = [], warehouses = [], locations 
         })),
       };
 
-      const response = await fetch("/api/receipts", {
-        method: "POST",
+      const endpoint = mode === "edit" && receipt ? `/api/receipts/${receipt.id}` : "/api/receipts";
+      const method = mode === "edit" ? "PUT" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
@@ -63,7 +108,8 @@ export default function ReceiptForm({ products = [], warehouses = [], locations 
         throw new Error(body.error || "Unable to save receipt");
       }
 
-      router.push(`/receipts/${body.data.id}`);
+      const receiptId = mode === "edit" && receipt ? receipt.id : body.data.id;
+      router.push(`/receipts/${receiptId}`);
       router.refresh();
     } catch (err) {
       setError(err.message);
@@ -72,17 +118,20 @@ export default function ReceiptForm({ products = [], warehouses = [], locations 
     }
   }
 
-  const itemFields = [
-    { key: "quantity", label: "Quantity", type: "number", min: 0 },
-    { key: "unit_price", label: "Unit Price", type: "number", min: 0 },
-    { key: "location_id", label: "Location", type: "select", options: locationOptions },
-  ];
+  const itemFields = useMemo(
+    () => [
+      { key: "quantity", label: "Quantity", type: "number", min: 0 },
+      { key: "unit_price", label: "Unit Price", type: "number", min: 0 },
+      { key: "location_id", label: "Location", type: "select", options: locationOptions },
+    ],
+    [locationOptions]
+  );
 
   return (
     <div className="space-y-8">
       <div className="grid gap-5 md:grid-cols-2">
-        <Field label="Reference No" name="reference_no" value={form.reference_no} onChange={handleChange} />
-        <Field label="Supplier" name="supplier_name" value={form.supplier_name} onChange={handleChange} required />
+        <Field label="Reference No" name="reference_no" value={form.reference_no} onChange={handleChange} required />
+        <Field label="Receipt from" name="supplier_name" value={form.supplier_name} onChange={handleChange} required />
       </div>
       <div className="grid gap-5 md:grid-cols-3">
         <div className="space-y-2">
@@ -115,6 +164,33 @@ export default function ReceiptForm({ products = [], warehouses = [], locations 
             ))}
           </select>
         </div>
+        <div className="space-y-2">
+          <label className="text-xs uppercase tracking-[0.3em] text-slate-500">Responsible</label>
+          <select
+            name="responsible_id"
+            value={form.responsible_id}
+            onChange={handleChange}
+            className="w-full rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-2 text-white"
+          >
+            <option value="">Unassigned</option>
+            {responsibleOptions.map((option) => (
+              <option key={option.value} value={option.value} className="bg-slate-900">
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-3">
+        <Field
+          label="Scheduled for"
+          type="datetime-local"
+          name="scheduled_for"
+          value={form.scheduled_for}
+          onChange={handleChange}
+          placeholder="Optional"
+        />
         <Field label="Notes" name="notes" value={form.notes} onChange={handleChange} placeholder="Optional" />
       </div>
 
@@ -160,4 +236,17 @@ function Field({ label, ...props }) {
       />
     </div>
   );
+}
+
+function toDateTimeLocal(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (num) => String(num).padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
