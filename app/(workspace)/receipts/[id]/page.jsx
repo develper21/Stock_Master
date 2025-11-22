@@ -73,9 +73,10 @@ export default async function ReceiptDetailPage({ params, searchParams }) {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <InfoCard label="Status" value={<StatusBadge status={receipt.status} />} />
         <InfoCard label="Warehouse" value={receipt.warehouses?.name || "—"} />
+        <InfoCard label="Receipt From" value={receipt.supplier_name || "—"} />
         <InfoCard label="Created" value={new Date(receipt.created_at).toLocaleString()} />
       </div>
 
