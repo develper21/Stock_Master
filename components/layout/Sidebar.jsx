@@ -95,8 +95,8 @@ function NavItem({
   }
 
   function handleMouseLeave() {
-    if (hasChildren && typeof setActiveFlyout === "function") {
-      setActiveFlyout((current) => (current === item.label ? null : current));
+    if (!hasChildren && typeof setActiveFlyout === "function") {
+      setActiveFlyout(null);
     }
   }
 
@@ -120,6 +120,10 @@ function NavItem({
           className={`absolute left-[calc(100%+0.5rem)] top-0 z-40 ${
             isFlyoutOpen ? "flex" : "hidden"
           } min-w-[230px] flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/95 p-4 text-xs text-slate-200 shadow-2xl`}
+          onMouseEnter={() => setActiveFlyout?.(item.label)}
+          onMouseLeave={() =>
+            setActiveFlyout?.((current) => (current === item.label ? null : current))
+          }
         >
           <div className="space-y-2">
             <div className="text-[0.65rem] uppercase tracking-[0.35em] text-slate-500">{item.label}</div>
