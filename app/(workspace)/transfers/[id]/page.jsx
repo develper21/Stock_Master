@@ -48,6 +48,8 @@ export default async function TransferDetailPage({ params }) {
       <PageHeader
         title={`Transfer ${transfer.reference_no}`}
         description={`${transfer.from?.name || "—"} → ${transfer.to?.name || "—"}`}
+        backHref="/transfers"
+        backLabel="All transfers"
         actions={
           <div className="flex gap-3">
             <Link
