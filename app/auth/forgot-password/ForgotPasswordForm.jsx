@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function ForgotPasswordForm() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    router.prefetch("/auth/reset-password");
+  }, [router]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -14,18 +20,20 @@ export default function ForgotPasswordForm() {
     setLoading(true);
 
     try {
+      const normalizedEmail = email.trim();
+
       const response = await fetch("/api/auth/forgot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload.error || "Unable to send OTP.");
       }
-
-      setStatus({ type: "success", message: "OTP sent. Check your inbox and continue to reset." });
+      setStatus({ type: "success", message: "OTP sent. Redirecting you to verification..." });
+      router.push(`/auth/reset-password?email=${encodeURIComponent(normalizedEmail)}`);
     } catch (error) {
       setStatus({ type: "error", message: error.message });
     } finally {
