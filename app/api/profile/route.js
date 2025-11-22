@@ -2,6 +2,8 @@ import { requireApiSession } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
 import { jsonSuccess, jsonError, handleRouteError } from "@/lib/api-helpers";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const { session } = await requireApiSession();
