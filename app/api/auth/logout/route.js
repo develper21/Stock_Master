@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
+export { dynamic } from "@/lib/api-runtime";
 
 export async function POST() {
   try {
