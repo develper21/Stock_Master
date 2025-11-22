@@ -31,6 +31,8 @@ export async function PUT(req, { params }) {
         status: payload.status,
         warehouse_id: payload.warehouse_id,
         notes: payload.notes,
+        responsible_id: payload.responsible_id || null,
+        scheduled_for: payload.scheduled_for || null,
       })
       .eq("id", params.id);
 
