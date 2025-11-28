@@ -15,7 +15,7 @@ export default function PageHeader({ title, description, actions, backHref, back
           </Link>
         )}
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">StockMaster</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">STOKIQ</p>
           <h1 className="text-3xl font-semibold text-white">{title}</h1>
           {description && <p className="text-sm text-slate-400">{description}</p>}
         </div>

@@ -3,7 +3,7 @@
 <p align="center">Next.js 14 + Supabase workspace that digitizes receipts, deliveries, transfers, adjustments, and stock audits with realtime visibility.</p>
 
 <p align="center">
-  <a href="https://your-demo-link.example.com" target="_blank" rel="noreferrer">
+  <a href="https://stock-master-phi.vercel.app/" target="_blank" rel="noreferrer">
     <img src="./assets/dashboard.png" alt="StockMaster dashboard preview" width="900" />
   </a>
 </p>

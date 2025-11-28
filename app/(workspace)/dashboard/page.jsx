@@ -2,7 +2,7 @@ import KpiGrid from "@/components/dashboard/KpiGrid";
 import { fetchDashboardStats } from "@/lib/data/dashboard";
 
 export const metadata = {
-  title: "Dashboard | StockMaster",
+  title: "Dashboard | stockiq",
 };
 
 export default async function DashboardPage() {
