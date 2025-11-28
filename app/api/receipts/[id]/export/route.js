@@ -1,5 +1,6 @@
 import { requireApiSession } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
+export { dynamic } from "@/lib/api-runtime";
 
 function csvEscape(value) {
   if (value === null || value === undefined) return "";

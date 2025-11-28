@@ -1,6 +1,7 @@
 import { requireApiSession } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
 import { jsonSuccess, jsonError, handleRouteError } from "@/lib/api-helpers";
+export { dynamic } from "@/lib/api-runtime";
 
 export async function GET(req) {
   try {

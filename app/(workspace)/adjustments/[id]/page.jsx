@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageHeader from "@/components/layout/PageHeader";
 import { getSessionAndProfile } from "@/lib/auth";
 import DataTable from "@/components/common/DataTable";
@@ -43,15 +44,10 @@ export default async function AdjustmentDetailPage({ params }) {
       <PageHeader
         title={`Adjustment for ${adjustment.products?.name || "Product"}`}
         description={`Warehouse ${adjustment.warehouses?.name || "—"}`}
+        backHref="/adjustments"
+        backLabel="All adjustments"
         actions={
-          <div className="flex items-center gap-2">
-            <Link href="/adjustments" className="rounded-2xl border border-white/10 px-4 py-2 text-sm text-slate-200">
-              Back to adjustments
-            </Link>
-            <div className="rounded-2xl border border-white/10 px-4 py-2 text-sm text-slate-200">
-              By {profile.full_name}
-            </div>
-          </div>
+          <div className="rounded-2xl border border-white/10 px-4 py-2 text-sm text-slate-200">By {profile.full_name}</div>
         }
       />
 

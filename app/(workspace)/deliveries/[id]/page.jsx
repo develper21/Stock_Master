@@ -30,6 +30,8 @@ export default async function DeliveryDetailPage({ params }) {
       <PageHeader
         title={`Delivery ${delivery.reference_no}`}
         description={`Customer ${delivery.customer || "—"}`}
+        backHref="/deliveries"
+        backLabel="All deliveries"
         actions={
           <div className="flex gap-3">
             <Link

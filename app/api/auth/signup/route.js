@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { PASSWORD_REGEX } from "@/lib/constants";
 import { getSupabaseServiceClient } from "@/lib/supabase/service-client";
 import { serverEnv } from "@/lib/env.server";
+export { dynamic } from "@/lib/api-runtime";
 
 const ROLES = ["inventory_manager", "warehouse_staff"];
 

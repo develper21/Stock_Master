@@ -8,9 +8,23 @@ create extension if not exists pg_trgm;
 -- =========================
 -- ENUMERATIONS
 -- =========================
-create type public.user_role as enum ('inventory_manager', 'warehouse_staff');
-create type public.doc_status as enum ('draft', 'waiting', 'ready', 'done', 'cancelled');
-create type public.operation_type as enum ('receipt', 'delivery', 'transfer', 'adjustment');
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'user_role') then
+    create type public.user_role as enum ('inventory_manager', 'warehouse_staff');
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'doc_status') then
+    create type public.doc_status as enum ('draft', 'waiting', 'ready', 'done', 'cancelled');
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (select 1 from pg_type where typname = 'operation_type') then
+    create type public.operation_type as enum ('receipt', 'delivery', 'transfer', 'adjustment');
+  end if;
+end $$;
 
 -- =========================
 -- TABLES
@@ -183,10 +197,15 @@ begin
 end;
 $$ language plpgsql;
 
+drop trigger if exists set_product_updated_at on public.products;
 create trigger set_product_updated_at before update on public.products
   for each row execute procedure public.set_current_timestamp();
+
+drop trigger if exists set_stock_levels_updated_at on public.stock_levels;
 create trigger set_stock_levels_updated_at before update on public.stock_levels
   for each row execute procedure public.set_current_timestamp();
+
+drop trigger if exists set_profiles_updated_at on public.profiles;
 create trigger set_profiles_updated_at before update on public.profiles
   for each row execute procedure public.set_current_timestamp();
 
@@ -210,117 +229,167 @@ $$ language sql stable;
 -- ROW LEVEL SECURITY POLICIES
 -- =========================
 alter table public.profiles enable row level security;
+drop policy if exists "profiles_select_self" on public.profiles;
 create policy "profiles_select_self" on public.profiles
   for select using (auth.uid() = id);
+drop policy if exists "profiles_update_self" on public.profiles;
 create policy "profiles_update_self" on public.profiles
   for update using (auth.uid() = id);
 
 alter table public.warehouses enable row level security;
+drop policy if exists "warehouses_all_authenticated" on public.warehouses;
 create policy "warehouses_all_authenticated" on public.warehouses
   for select using (auth.role() = 'authenticated');
+drop policy if exists "warehouses_insert_inventory_manager" on public.warehouses;
 create policy "warehouses_insert_inventory_manager" on public.warehouses
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "warehouses_update_inventory_manager" on public.warehouses;
 create policy "warehouses_update_inventory_manager" on public.warehouses
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "warehouses_delete_inventory_manager" on public.warehouses;
 create policy "warehouses_delete_inventory_manager" on public.warehouses
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.locations enable row level security;
+drop policy if exists "locations_read_all" on public.locations;
 create policy "locations_read_all" on public.locations for select using (auth.role() = 'authenticated');
+drop policy if exists "locations_insert_inventory_manager" on public.locations;
 create policy "locations_insert_inventory_manager" on public.locations
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "locations_update_inventory_manager" on public.locations;
 create policy "locations_update_inventory_manager" on public.locations
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "locations_delete_inventory_manager" on public.locations;
 create policy "locations_delete_inventory_manager" on public.locations
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.product_categories enable row level security;
+drop policy if exists "product_categories_read" on public.product_categories;
 create policy "product_categories_read" on public.product_categories for select using (auth.role() = 'authenticated');
+drop policy if exists "product_categories_insert" on public.product_categories;
 create policy "product_categories_insert" on public.product_categories
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "product_categories_update" on public.product_categories;
 create policy "product_categories_update" on public.product_categories
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "product_categories_delete" on public.product_categories;
 create policy "product_categories_delete" on public.product_categories
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.products enable row level security;
+drop policy if exists "products_read" on public.products;
 create policy "products_read" on public.products for select using (auth.role() = 'authenticated');
+drop policy if exists "products_insert" on public.products;
 create policy "products_insert" on public.products
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "products_update" on public.products;
 create policy "products_update" on public.products
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "products_delete" on public.products;
 create policy "products_delete" on public.products
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.stock_levels enable row level security;
+drop policy if exists "stock_levels_read" on public.stock_levels;
 create policy "stock_levels_read" on public.stock_levels for select using (auth.role() = 'authenticated');
+drop policy if exists "stock_levels_write_via_rpc" on public.stock_levels;
 create policy "stock_levels_write_via_rpc" on public.stock_levels for update using (false);
 
 alter table public.receipts enable row level security;
+drop policy if exists "receipts_visible" on public.receipts;
 create policy "receipts_visible" on public.receipts for select using (auth.role() = 'authenticated');
+drop policy if exists "receipts_insert" on public.receipts;
 create policy "receipts_insert" on public.receipts
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "receipts_update" on public.receipts;
 create policy "receipts_update" on public.receipts
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "receipts_delete" on public.receipts;
 create policy "receipts_delete" on public.receipts
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.receipt_items enable row level security;
+drop policy if exists "receipt_items_read" on public.receipt_items;
 create policy "receipt_items_read" on public.receipt_items for select using (auth.role() = 'authenticated');
+drop policy if exists "receipt_items_insert" on public.receipt_items;
 create policy "receipt_items_insert" on public.receipt_items
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "receipt_items_update" on public.receipt_items;
 create policy "receipt_items_update" on public.receipt_items
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "receipt_items_delete" on public.receipt_items;
 create policy "receipt_items_delete" on public.receipt_items
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.deliveries enable row level security;
+drop policy if exists "deliveries_visible" on public.deliveries;
 create policy "deliveries_visible" on public.deliveries for select using (auth.role() = 'authenticated');
+drop policy if exists "deliveries_insert" on public.deliveries;
 create policy "deliveries_insert" on public.deliveries
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "deliveries_update" on public.deliveries;
 create policy "deliveries_update" on public.deliveries
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "deliveries_delete" on public.deliveries;
 create policy "deliveries_delete" on public.deliveries
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.delivery_items enable row level security;
+drop policy if exists "delivery_items_read" on public.delivery_items;
 create policy "delivery_items_read" on public.delivery_items for select using (auth.role() = 'authenticated');
+drop policy if exists "delivery_items_insert" on public.delivery_items;
 create policy "delivery_items_insert" on public.delivery_items
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "delivery_items_update" on public.delivery_items;
 create policy "delivery_items_update" on public.delivery_items
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "delivery_items_delete" on public.delivery_items;
 create policy "delivery_items_delete" on public.delivery_items
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.internal_transfers enable row level security;
+drop policy if exists "transfers_read" on public.internal_transfers;
 create policy "transfers_read" on public.internal_transfers for select using (auth.role() = 'authenticated');
+drop policy if exists "transfers_insert" on public.internal_transfers;
 create policy "transfers_insert" on public.internal_transfers
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "transfers_update" on public.internal_transfers;
 create policy "transfers_update" on public.internal_transfers
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "transfers_delete" on public.internal_transfers;
 create policy "transfers_delete" on public.internal_transfers
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.transfer_items enable row level security;
+drop policy if exists "transfer_items_read" on public.transfer_items;
 create policy "transfer_items_read" on public.transfer_items for select using (auth.role() = 'authenticated');
+drop policy if exists "transfer_items_insert" on public.transfer_items;
 create policy "transfer_items_insert" on public.transfer_items
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "transfer_items_update" on public.transfer_items;
 create policy "transfer_items_update" on public.transfer_items
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "transfer_items_delete" on public.transfer_items;
 create policy "transfer_items_delete" on public.transfer_items
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.adjustments enable row level security;
+drop policy if exists "adjustments_read" on public.adjustments;
 create policy "adjustments_read" on public.adjustments for select using (auth.role() = 'authenticated');
+drop policy if exists "adjustments_insert" on public.adjustments;
 create policy "adjustments_insert" on public.adjustments
   for insert with check (public.require_role('inventory_manager'));
+drop policy if exists "adjustments_update" on public.adjustments;
 create policy "adjustments_update" on public.adjustments
   for update using (public.require_role('inventory_manager')) with check (public.require_role('inventory_manager'));
+drop policy if exists "adjustments_delete" on public.adjustments;
 create policy "adjustments_delete" on public.adjustments
   for delete using (public.require_role('inventory_manager'));
 
 alter table public.stock_ledger enable row level security;
+drop policy if exists "stock_ledger_read" on public.stock_ledger;
 create policy "stock_ledger_read" on public.stock_ledger for select using (auth.role() = 'authenticated');
+drop policy if exists "stock_ledger_insert_via_rpc" on public.stock_ledger;
 create policy "stock_ledger_insert_via_rpc" on public.stock_ledger for insert with check (false);
 
 -- =========================

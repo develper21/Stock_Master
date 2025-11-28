@@ -3,6 +3,7 @@ import PageHeader from "@/components/layout/PageHeader";
 import DataTable from "@/components/common/DataTable";
 import StatusBadge from "@/components/common/StatusBadge";
 import MoveHistoryKanban from "@/components/move-history/MoveHistoryKanban";
+import { Search, List, KanbanSquare } from "lucide-react";
 import { getSessionAndProfile } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -140,13 +141,25 @@ export default async function MoveHistoryPage({ searchParams }) {
   ];
 
   const params = buildParams(searchParams);
-  const toggleParams = new URLSearchParams(params);
-  toggleParams.set("view", activeView === "kanban" ? "list" : "kanban");
-  const toggleHref = `/ledger${toggleParams.size ? `?${toggleParams.toString()}` : ""}`;
-
   const clearParams = new URLSearchParams(params);
   clearParams.delete("q");
   const clearHref = `/ledger${clearParams.size ? `?${clearParams.toString()}` : ""}`;
+
+  const buildViewHref = (targetView) => {
+    const nextParams = new URLSearchParams(params);
+    if (targetView === "list") {
+      nextParams.delete("view");
+    } else {
+      nextParams.set("view", targetView);
+    }
+    const qs = nextParams.toString();
+    return `/ledger${qs ? `?${qs}` : ""}`;
+  };
+
+  const viewOptions = [
+    { value: "list", label: "List view", icon: List },
+    { value: "kanban", label: "Kanban view", icon: KanbanSquare },
+  ];
 
   return (
     <div className="space-y-6">
@@ -154,22 +167,19 @@ export default async function MoveHistoryPage({ searchParams }) {
         title="Move History"
         description="Audit every stock relocation with quick filtering and flexible views."
         actions={
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <form method="get" className="flex items-center gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <form method="get" className="flex flex-1 items-center gap-2">
               <input type="hidden" name="view" value={activeView} />
-              <input
-                type="text"
-                name="q"
-                defaultValue={query}
-                placeholder="Search reference, contact, product"
-                className="w-56 rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
-              />
-              <button
-                type="submit"
-                className="rounded-2xl bg-emerald-400 px-3 py-2 text-xs font-semibold text-slate-950 hover:bg-emerald-300"
-              >
-                Search
-              </button>
+              <div className="relative w-full sm:max-w-xs">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                <input
+                  type="search"
+                  name="q"
+                  defaultValue={query}
+                  placeholder="Search reference, contact, product"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-900/60 px-4 py-2 pl-10 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-400/60"
+                />
+              </div>
               {query && (
                 <a
                   href={clearHref}
@@ -179,12 +189,25 @@ export default async function MoveHistoryPage({ searchParams }) {
                 </a>
               )}
             </form>
-            <a
-              href={toggleHref}
-              className="rounded-2xl border border-white/15 px-3 py-2 text-xs text-slate-200 hover:text-white"
-            >
-              {activeView === "kanban" ? "Show List View" : "Show Kanban View"}
-            </a>
+            <div className="flex items-center rounded-2xl border border-white/15 bg-slate-900/40 p-0.5">
+              {viewOptions.map((option) => {
+                const Icon = option.icon;
+                const href = buildViewHref(option.value);
+                const isActiveOption = activeView === option.value;
+                return (
+                  <Link
+                    key={option.value}
+                    href={href}
+                    className={`flex h-9 w-10 items-center justify-center rounded-2xl transition ${
+                      isActiveOption ? "bg-emerald-500/20 text-emerald-200" : "text-slate-400 hover:text-white"
+                    }`}
+                    aria-label={option.label}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         }
       />

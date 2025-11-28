@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiSession } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
+export { dynamic } from "@/lib/api-runtime";
 
 export async function GET(req) {
   try {

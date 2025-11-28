@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServiceClient } from "@/lib/supabase/service-client";
 import { serverEnv } from "@/lib/env.server";
+import { dynamic, revalidate, fetchCache } from "@/lib/api-runtime";
 
 export async function POST(req) {
   try {
