@@ -34,7 +34,7 @@ export default function Sidebar({ profile }) {
   return (
     <aside className="sticky top-0 flex h-screen w-full flex-col border-r border-white/5 bg-slate-950/80 px-6 py-8 backdrop-blur">
       <div>
-        <p className="text-xs uppercase tracking-[0.4em] text-emerald-300">StockMaster</p>
+        <p className="text-xs uppercase tracking-[0.4em] text-emerald-300">STOKIQ</p>
         <h2 className="mt-2 text-lg font-semibold text-white">Control Tower</h2>
         <p className="text-xs text-slate-500">Hi {profile.full_name.split(" ")[0]}</p>
       </div>
@@ -64,7 +64,7 @@ export default function Sidebar({ profile }) {
           logoutLoading={logoutLoading}
           logoutError={logoutError}
         />
-        <p className="text-[0.65rem] uppercase tracking-[0.35em] text-slate-500">StockMaster v1.0</p>
+        <p className="text-[0.65rem] uppercase tracking-[0.35em] text-slate-500">STOKIQ v1.0</p>
       </div>
     </aside>
   );
