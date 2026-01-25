@@ -37,6 +37,8 @@ export default function LoginForm() {
     }
   }
 
+  const isEmailVerificationError = error && error.includes("verify your email");
+
   return (
     <div>
       <header className="space-y-2">
@@ -77,7 +79,25 @@ export default function LoginForm() {
           />
         </div>
 
-        {error && <p className="text-sm text-rose-400">{error}</p>}
+        {error && (
+          <div className={`text-sm p-3 rounded-lg ${
+            isEmailVerificationError 
+              ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20' 
+              : 'text-rose-400'
+          }`}>
+            <p>{error}</p>
+            {isEmailVerificationError && (
+              <div className="mt-2 space-y-2">
+                <Link 
+                  href="/auth/verify-email" 
+                  className="text-amber-300 hover:text-amber-200 underline"
+                >
+                  Request new verification email
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
 
         <button
           type="submit"
