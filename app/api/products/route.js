@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { requireApiSession } from "@/lib/auth";
-import { getSupabaseServerClient } from "@/lib/supabase/server-client";
+import { requireAuth } from "@/lib/auth-server";
+import { getSupabaseServiceClient } from "@/lib/supabase/service-client";
+import { jsonSuccess, jsonError, handleRouteError } from "@/lib/api-helpers";
 export { dynamic } from "@/lib/api-runtime";
 
 export async function GET(req) {
   try {
-    await requireApiSession();
-    const supabase = getSupabaseServerClient();
+    const user = await requireAuth();
+    const supabase = getSupabaseServiceClient();
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const sku = searchParams.get("sku");
@@ -23,40 +24,48 @@ export async function GET(req) {
 
     const { data, error } = await query;
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return jsonError(error.message, 400);
     }
 
-    return NextResponse.json({ data });
+    return jsonSuccess({ data });
   } catch (error) {
-    const status = error?.status || 500;
-    return NextResponse.json({ error: error.message }, { status });
+    return handleRouteError(error);
   }
 }
 
 export async function POST(req) {
   try {
-    await requireApiSession();
-    const supabase = getSupabaseServerClient();
-    const body = await req.json();
-    const { name, sku, category_id, unit, reorder_level = 0 } = body;
+    const user = await requireAuth();
+    const supabase = getSupabaseServiceClient();
+    const payload = await req.json();
 
-    if (!name || !sku || !unit) {
-      return NextResponse.json({ error: "Name, SKU, and unit are required." }, { status: 400 });
+    // Validation
+    if (!payload.name || !payload.sku || !payload.unit) {
+      return jsonError("Name, SKU, and unit are required", 400);
     }
 
     const { data, error } = await supabase
       .from("products")
-      .insert({ name, sku, category_id, unit, reorder_level })
+      .insert({
+        name: payload.name,
+        sku: payload.sku,
+        description: payload.description,
+        category_id: payload.category_id || null,
+        unit: payload.unit,
+        reorder_level: payload.reorder_level || 0,
+        max_stock: payload.max_stock || null,
+        cost_price: payload.cost_price || 0,
+        selling_price: payload.selling_price || 0
+      })
       .select()
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return jsonError(error.message, 400);
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    return jsonSuccess({ data }, { status: 201 });
   } catch (error) {
-    const status = error?.status || 500;
-    return NextResponse.json({ error: error.message }, { status });
+    return handleRouteError(error);
   }
 }
