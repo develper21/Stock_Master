@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { PASSWORD_REGEX } from "@/lib/constants";
+import { createUser } from "@/lib/auth-custom";
 import { getSupabaseServiceClient } from "@/lib/supabase/service-client";
-import { serverEnv } from "@/lib/env.server";
+import { sendEmailVerification } from "@/lib/email-verification";
 export { dynamic } from "@/lib/api-runtime";
 
 const ROLES = ["inventory_manager", "warehouse_staff"];
@@ -16,6 +17,7 @@ export async function POST(req) {
       password,
       confirmPassword,
       role = "warehouse_staff",
+      defaultWarehouseId,
     } = await req.json();
 
     if (!loginId || !fullName || !email || !password || !confirmPassword) {
@@ -42,6 +44,7 @@ export async function POST(req) {
 
     const serviceClient = getSupabaseServiceClient();
 
+    // Check if login_id already exists
     const existingProfile = await serviceClient
       .from("profiles")
       .select("id")
@@ -52,52 +55,67 @@ export async function POST(req) {
       return NextResponse.json({ error: "Login ID already taken." }, { status: 409 });
     }
 
-    const { data: signUpData, error: signUpError } = await serviceClient.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          login_id: loginId,
-          role,
-          phone,
-        },
-        emailRedirectTo: `${serverEnv.siteUrl}/auth/verify-otp?email=${encodeURIComponent(email)}`,
-      },
-    });
+    // Check if email already exists
+    const existingEmail = await serviceClient
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
 
-    if (signUpError) {
-      return NextResponse.json({ error: signUpError.message }, { status: 400 });
+    if (existingEmail.data) {
+      return NextResponse.json({ error: "Email already registered." }, { status: 409 });
     }
 
-    const userId = signUpData.user?.id;
-
-    if (!userId) {
-      return NextResponse.json({ error: "Signup failed to create user." }, { status: 400 });
-    }
-
-    const { error: profileError } = await serviceClient.from("profiles").insert({
-      id: userId,
+    // Create user with custom auth (email_verified = false by default)
+    const user = await createUser({
       login_id: loginId,
       full_name: fullName,
       email,
       phone,
+      password,
       role,
+      default_warehouse_id: defaultWarehouseId
     });
 
-    if (profileError) {
-      await serviceClient.auth.admin.deleteUser(userId);
-      return NextResponse.json({ error: profileError.message }, { status: 400 });
+    // Send verification email
+    try {
+      await sendEmailVerification(email);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // User created but email failed - still return success but note the issue
+      return NextResponse.json(
+        {
+          message: "Account created successfully, but verification email could not be sent. Please contact support.",
+          user: {
+            id: user.id,
+            login_id: user.login_id,
+            full_name: user.full_name,
+            email: user.email,
+            role: user.role,
+            email_verified: false
+          },
+          warning: "Verification email failed to send"
+        },
+        { status: 201 }
+      );
     }
 
     return NextResponse.json(
       {
-        message: "Signup successful. Please verify the OTP sent to your email before logging in.",
+        message: "Account created successfully! Please check your email to verify your account before logging in.",
+        user: {
+          id: user.id,
+          login_id: user.login_id,
+          full_name: user.full_name,
+          email: user.email,
+          role: user.role,
+          email_verified: false
+        }
       },
       { status: 201 }
     );
   } catch (error) {
     console.error("Signup failed", error);
-    return NextResponse.json({ error: "Unexpected server error." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Unexpected server error." }, { status: 500 });
   }
 }
