@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServiceClient } from "@/lib/supabase/service-client";
-import { serverEnv } from "@/lib/env.server";
-import { dynamic, revalidate, fetchCache } from "@/lib/api-runtime";
+import { requestPasswordReset } from "@/lib/password-reset";
+export { dynamic } from "@/lib/api-runtime";
 
 export async function POST(req) {
   try {
@@ -11,18 +10,11 @@ export async function POST(req) {
       return NextResponse.json({ error: "Email is required." }, { status: 400 });
     }
 
-    const serviceClient = getSupabaseServiceClient();
-    const { error } = await serviceClient.auth.resetPasswordForEmail(email, {
-      redirectTo: `${serverEnv.siteUrl}/auth/reset-password?email=${encodeURIComponent(email)}`,
-    });
+    const result = await requestPasswordReset(email);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ message: "OTP sent to your email." });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Forgot password failed", error);
-    return NextResponse.json({ error: "Unexpected server error." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Failed to process password reset request." }, { status: 500 });
   }
 }
