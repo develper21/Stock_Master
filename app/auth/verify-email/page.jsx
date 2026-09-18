@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
@@ -83,59 +83,67 @@ export default function VerifyEmailPage() {
   }
 
   return (
+    <div className="bg-slate-900/60 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
+      {loading ? (
+        <div className="flex justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+        </div>
+      ) : status && (
+        <div className="space-y-6">
+          <div className={`text-center p-4 rounded-lg ${
+            status.type === 'success' ? 'bg-emerald-500/10 text-emerald-300' :
+            status.type === 'error' ? 'bg-rose-500/10 text-rose-300' :
+            'bg-blue-500/10 text-blue-300'
+          }`}>
+            <p className="text-sm">{status.message}</p>
+          </div>
+
+          <div className="space-y-3">
+            {status.showLogin && (
+              <Link
+                href="/auth/login"
+                className="w-full flex justify-center rounded-2xl bg-gradient-to-r from-emerald-400 to-emerald-500 px-4 py-3 text-base font-semibold text-slate-950 transition hover:from-emerald-300 hover:to-emerald-400"
+              >
+                Go to Login
+              </Link>
+            )}
+
+            {status.showResend && (
+              <button
+                onClick={handleResendEmail}
+                className="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-base font-medium text-white transition hover:bg-slate-700"
+              >
+                Resend Verification Email
+              </button>
+            )}
+
+            <Link
+              href="/auth/login"
+              className="w-full flex justify-center text-sm text-slate-400 hover:text-slate-300 transition"
+            >
+              Back to Login
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-white mb-2">Email Verification</h1>
-          <p className="text-slate-400">
-            {loading ? "Verifying your email address..." : ""}
-          </p>
         </div>
-
-        <div className="bg-slate-900/60 backdrop-blur-sm rounded-2xl border border-white/10 p-8">
-          {loading ? (
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
-            </div>
-          ) : status && (
-            <div className="space-y-6">
-              <div className={`text-center p-4 rounded-lg ${
-                status.type === 'success' ? 'bg-emerald-500/10 text-emerald-300' :
-                status.type === 'error' ? 'bg-rose-500/10 text-rose-300' :
-                'bg-blue-500/10 text-blue-300'
-              }`}>
-                <p className="text-sm">{status.message}</p>
-              </div>
-
-              <div className="space-y-3">
-                {status.showLogin && (
-                  <Link
-                    href="/auth/login"
-                    className="w-full flex justify-center rounded-2xl bg-gradient-to-r from-emerald-400 to-emerald-500 px-4 py-3 text-base font-semibold text-slate-950 transition hover:from-emerald-300 hover:to-emerald-400"
-                  >
-                    Go to Login
-                  </Link>
-                )}
-
-                {status.showResend && (
-                  <button
-                    onClick={handleResendEmail}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-800 px-4 py-3 text-base font-medium text-white transition hover:bg-slate-700"
-                  >
-                    Resend Verification Email
-                  </button>
-                )}
-
-                <Link
-                  href="/auth/login"
-                  className="w-full flex justify-center text-sm text-slate-400 hover:text-slate-300 transition"
-                >
-                  Back to Login
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
+        <Suspense fallback={
+          <div className="bg-slate-900/60 backdrop-blur-sm rounded-2xl border border-white/10 p-8 flex justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+          </div>
+        }>
+          <VerifyEmailContent />
+        </Suspense>
       </div>
     </div>
   );
