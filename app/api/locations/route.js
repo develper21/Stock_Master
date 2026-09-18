@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import { requireAuth, requireRole } from "@/lib/auth-server";
 import { getSupabaseServiceClient } from "@/lib/supabase/service-client";
 import { jsonSuccess, jsonError, handleRouteError } from "@/lib/api-helpers";
-export { dynamic } from "@/lib/api-runtime";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "default-no-store";
 
 export async function GET(req) {
   try {
