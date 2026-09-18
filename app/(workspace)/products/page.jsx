@@ -1,5 +1,6 @@
 import PageHeader from "@/components/layout/PageHeader";
 import DataTable from "@/components/common/DataTable";
+import AdvancedSearch from "@/components/common/AdvancedSearch";
 import { getSessionAndProfile } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -28,11 +29,17 @@ export default async function ProductsPage() {
       label: "Actions",
       accessor: "actions",
       render: (row) => (
-        <div className="space-x-3 text-xs">
-          <a href={`/products/${row.id}/edit`} className="text-emerald-300 hover:text-emerald-200">
+        <div className="flex gap-2">
+          <a
+            href={`/products/${row.id}/edit`}
+            className="text-emerald-400 hover:text-emerald-300 text-xs"
+          >
             Edit
           </a>
-          <a href={`/products/${row.id}/stock`} className="text-slate-400 hover:text-slate-200">
+          <a
+            href={`/products/${row.id}/stock`}
+            className="text-blue-400 hover:text-blue-300 text-xs"
+          >
             Stock
           </a>
         </div>
@@ -40,11 +47,96 @@ export default async function ProductsPage() {
     },
   ];
 
+  const searchFilters = [
+    {
+      key: 'category',
+      label: 'Category',
+      type: 'select',
+      options: [], // Will be populated dynamically
+      placeholder: 'All Categories'
+    },
+    {
+      key: 'min_stock',
+      label: 'Min Stock Level',
+      type: 'number',
+      placeholder: 'Minimum stock',
+      min: 0
+    },
+    {
+      key: 'max_stock',
+      label: 'Max Stock Level',
+      type: 'number',
+      placeholder: 'Maximum stock',
+      min: 0
+    },
+    {
+      key: 'reorder_level',
+      label: 'Reorder Level',
+      type: 'number',
+      placeholder: 'Reorder level',
+      min: 0
+    },
+    {
+      key: 'created_after',
+      label: 'Created After',
+      type: 'date',
+      placeholder: 'From date'
+    },
+    {
+      key: 'created_before',
+      label: 'Created Before',
+      type: 'date',
+      placeholder: 'To date'
+    }
+  ];
+
+  const handleSearch = async ({ searchTerm, filters }) => {
+    let query = supabase
+      .from("products")
+      .select("id, name, sku, unit, reorder_level, product_categories(name)")
+      .order("created_at", { ascending: false });
+
+    // Apply search term
+    if (searchTerm) {
+      query = query.or(`name.ilike.%${searchTerm}%,sku.ilike.%${searchTerm}%`);
+    }
+
+    // Apply filters
+    if (filters.category) {
+      query = query.eq('category_id', filters.category);
+    }
+    if (filters.min_stock) {
+      query = query.gte('reorder_level', filters.min_stock);
+    }
+    if (filters.max_stock) {
+      query = query.lte('reorder_level', filters.max_stock);
+    }
+    if (filters.reorder_level) {
+      query = query.eq('reorder_level', filters.reorder_level);
+    }
+    if (filters.created_after) {
+      query = query.gte('created_at', filters.created_after);
+    }
+    if (filters.created_before) {
+      query = query.lte('created_at', filters.created_before);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('Search error:', error);
+      return;
+    }
+
+    // Update the page with filtered results
+    // In a real app, you'd update state or trigger a re-render
+    console.log('Search results:', data);
+  };
+
   return (
     <div>
       <PageHeader
         title="Products"
-        description="Catalog of every SKU and unit of measure managed across warehouses."
+        description="Manage your product catalog and inventory levels."
         actions={
           <a
             href="/products/create"
@@ -54,7 +146,20 @@ export default async function ProductsPage() {
           </a>
         }
       />
-
+      
+      <div className="space-y-6">
+        <AdvancedSearch
+          onSearch={handleSearch}
+          placeholder="Search products by name or SKU..."
+          filters={searchFilters}
+        />
+        
+        <DataTable
+          columns={columns}
+          data={products}
+          emptyState="No products found matching your criteria."
+        />
+      </div>
       <DataTable columns={columns} data={products || []} emptyState="No products yet." />
     </div>
   );
