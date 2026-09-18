@@ -1,16 +1,19 @@
 import { requireApiSession, assertInventoryManager } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
 import { jsonSuccess, jsonError, handleRouteError } from "@/lib/api-helpers";
-export { dynamic } from "@/lib/api-runtime";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "default-no-store";
 
 export async function GET(_req, { params }) {
   try {
+    const { id } = (await params) || params;
     await requireApiSession();
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("product_categories")
       .select("id, name, description, created_at")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
     if (error) return jsonError(error.message, 404);
     return jsonSuccess({ data });
@@ -21,6 +24,7 @@ export async function GET(_req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
+    const { id } = (await params) || params;
     const { supabase, profile } = await requireApiSession();
     assertInventoryManager(profile);
     const payload = await req.json();
@@ -28,7 +32,7 @@ export async function PUT(req, { params }) {
     const { error } = await supabase
       .from("product_categories")
       .update({ name: payload.name, description: payload.description })
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) return jsonError(error.message, 400);
 
@@ -40,9 +44,10 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(_req, { params }) {
   try {
+    const { id } = (await params) || params;
     const { supabase, profile } = await requireApiSession();
     assertInventoryManager(profile);
-    const { error } = await supabase.from("product_categories").delete().eq("id", params.id);
+    const { error } = await supabase.from("product_categories").delete().eq("id", id);
     if (error) return jsonError(error.message, 400);
     return jsonSuccess({ message: "Category deleted" });
   } catch (error) {
