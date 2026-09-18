@@ -76,7 +76,7 @@ export default function CustomRealtimeObserver() {
         };
 
         eventSource.onerror = (error) => {
-          console.error('SSE connection error:', error);
+          // SSE connections can fail temporarily, don't log every error
           setIsConnected(false);
           eventSource.close();
 
