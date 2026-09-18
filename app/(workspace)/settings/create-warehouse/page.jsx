@@ -14,6 +14,8 @@ export default async function CreateWarehousePage() {
       <PageHeader
         title="Add warehouse"
         description="Register a new physical location so stock levels can be tracked precisely."
+        backHref="/settings/warehouses"
+        backLabel="Warehouses"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <WarehouseForm />

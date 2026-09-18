@@ -28,6 +28,8 @@ export default async function CreateTransferPage() {
       <PageHeader
         title="Create transfer"
         description="Move stock between warehouses/locations with built-in validations."
+        backHref="/transfers"
+        backLabel="Transfers"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <TransferForm

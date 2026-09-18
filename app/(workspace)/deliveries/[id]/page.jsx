@@ -9,13 +9,14 @@ import { notFound } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function DeliveryDetailPage({ params }) {
+  const resolvedParams = await params;
   const { supabase, profile } = await getSessionAndProfile({ redirectToLogin: true });
   const { data: delivery } = await supabase
     .from("deliveries")
     .select(
       "*, warehouses(name), delivery_items(*, products(name, sku, unit)), profiles:created_by(full_name)"
     )
-    .eq("id", params.id)
+    .eq("id", resolvedParams.id)
     .single();
 
   if (!delivery) {

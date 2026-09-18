@@ -103,8 +103,8 @@ const isValidIP = (ip) => {
   return ipv6Regex.test(ip);
 };
 
-// Main middleware function
-export function middleware(request) {
+// Main proxy function
+export function proxy(request) {
   const response = NextResponse.next();
 
   // Get client IP
@@ -199,7 +199,7 @@ export function middleware(request) {
   return response;
 }
 
-// Configure which paths the middleware should run on
+// Configure which paths the proxy should run on
 export const config = {
   matcher: [
     /*

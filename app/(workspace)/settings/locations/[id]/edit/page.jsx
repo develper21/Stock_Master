@@ -8,9 +8,10 @@ export const metadata = {
 };
 
 export default async function EditLocationPage({ params }) {
+  const resolvedParams = await params;
   const { supabase } = await getSessionAndProfile({ redirectToLogin: true });
   const [{ data: location }, { data: warehouses }] = await Promise.all([
-    supabase.from("locations").select("*").eq("id", params.id).single(),
+    supabase.from("locations").select("*").eq("id", resolvedParams.id).single(),
     supabase.from("warehouses").select("id, name").order("name", { ascending: true }),
   ]);
 
@@ -23,6 +24,8 @@ export default async function EditLocationPage({ params }) {
       <PageHeader
         title={`Edit ${location.name}`}
         description="Update rack or zone metadata for accurate stock allocations."
+        backHref="/settings/locations"
+        backLabel="Locations"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <LocationForm warehouses={warehouses} location={location} />

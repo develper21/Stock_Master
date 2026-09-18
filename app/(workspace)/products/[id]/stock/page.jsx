@@ -8,13 +8,14 @@ export const metadata = {
 };
 
 export default async function ProductStockPage({ params }) {
+  const resolvedParams = await params;
   const { supabase } = await getSessionAndProfile({ redirectToLogin: true });
   const [{ data: product }, { data: stockLevels }] = await Promise.all([
-    supabase.from("products").select("id, name, sku").eq("id", params.id).single(),
+    supabase.from("products").select("id, name, sku").eq("id", resolvedParams.id).single(),
     supabase
       .from("stock_levels")
       .select("id, quantity, warehouses(name), locations(name)")
-      .eq("product_id", params.id)
+      .eq("product_id", resolvedParams.id)
       .order("updated_at", { ascending: false }),
   ]);
 
@@ -45,6 +46,8 @@ export default async function ProductStockPage({ params }) {
       <PageHeader
         title={`${product.name} · Stock by location`}
         description={`SKU ${product.sku} across all warehouses and racks.`}
+        backHref="/products"
+        backLabel="Products"
       />
       <DataTable columns={columns} data={stockLevels || []} emptyState="No stock levels yet." />
     </div>

@@ -1,10 +1,13 @@
 import { requireApiSession } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
 import { jsonSuccess, jsonError, handleRouteError } from "@/lib/api-helpers";
-export { dynamic } from "@/lib/api-runtime";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "default-no-store";
 
 export async function POST(req, { params }) {
   try {
+    const { id } = (await params) || params;
     const { supabase } = await requireApiSession();
     const { itemId, packed } = await req.json();
 
@@ -16,7 +19,7 @@ export async function POST(req, { params }) {
       .from("delivery_items")
       .update({ packed })
       .eq("id", itemId)
-      .eq("delivery_id", params.id);
+      .eq("delivery_id", id);
 
     if (error) return jsonError(error.message, 400);
 

@@ -28,6 +28,8 @@ export default async function CreateDeliveryPage() {
       <PageHeader
         title="Create delivery"
         description="Plan outbound shipments with real-time stock checks."
+        backHref="/deliveries"
+        backLabel="Deliveries"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <DeliveryForm

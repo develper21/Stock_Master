@@ -1,6 +1,8 @@
 import { requireApiSession } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
-export { dynamic } from "@/lib/api-runtime";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "default-no-store";
 
 function csvEscape(value) {
   if (value === null || value === undefined) return "";
@@ -49,6 +51,7 @@ function buildCsv(receipt) {
 
 export async function GET(_req, { params }) {
   try {
+    const { id } = (await params) || params;
     await requireApiSession();
     const supabase = getSupabaseServerClient();
 
@@ -57,7 +60,7 @@ export async function GET(_req, { params }) {
       .select(
         "*, warehouses(name), receipt_items(*, products(name, sku, unit)), profiles:created_by(full_name, email)"
       )
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     if (error || !receipt) {

@@ -45,6 +45,8 @@ export default async function WarehousesPage() {
       <PageHeader
         title="Warehouses"
         description="Manage physical nodes where stock is stored and moved."
+        backHref="/dashboard"
+        backLabel="Dashboard"
         actions={
           isManager && (
             <Link

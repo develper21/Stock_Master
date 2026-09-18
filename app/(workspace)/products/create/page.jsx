@@ -18,6 +18,8 @@ export default async function CreateProductPage() {
       <PageHeader
         title="Add new product"
         description="Define SKU, units, and replenishment targets for a managed product."
+        backHref="/products"
+        backLabel="Products"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/40 p-8">
         <ProductForm categories={categories || []} />

@@ -1,16 +1,19 @@
 import { requireApiSession } from "@/lib/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server-client";
 import { jsonSuccess, handleRouteError } from "@/lib/api-helpers";
-export { dynamic } from "@/lib/api-runtime";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "default-no-store";
 
 export async function GET(_req, { params }) {
   try {
+    const { id } = (await params) || params;
     await requireApiSession();
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("products")
       .select("*, product_categories(id, name)")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
     if (error) {
       return handleRouteError(error);
@@ -23,6 +26,7 @@ export async function GET(_req, { params }) {
 
 export async function PUT(req, { params }) {
   try {
+    const { id } = (await params) || params;
     await requireApiSession();
     const supabase = getSupabaseServerClient();
     const body = await req.json();
@@ -36,7 +40,7 @@ export async function PUT(req, { params }) {
         unit: body.unit,
         reorder_level: body.reorder_level ?? 0,
       })
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) {
       return handleRouteError(error);

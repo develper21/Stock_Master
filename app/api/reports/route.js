@@ -1,7 +1,9 @@
 import { requireAuth } from "@/lib/auth-server";
 import { getSupabaseServiceClient } from "@/lib/supabase/service-client";
 import { jsonSuccess, jsonError, handleRouteError } from "@/lib/api-helpers";
-export { dynamic } from "@/lib/api-runtime";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "default-no-store";
 
 export async function GET(req) {
   try {
@@ -10,47 +12,55 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     
     const reportType = searchParams.get("type");
-    const startDate = searchParams.get("start_date");
-    const endDate = searchParams.get("end_date");
-    const warehouse = searchParams.get("warehouse_id");
-    const category = searchParams.get("category_id");
+    const startDate = searchParams.get("start_date") || searchParams.get("startDate");
+    const endDate = searchParams.get("end_date") || searchParams.get("endDate");
+    const warehouse = searchParams.get("warehouse_id") || searchParams.get("warehouse");
+    const category = searchParams.get("category_id") || searchParams.get("category");
     const format = searchParams.get("format") || "json";
 
     if (!reportType) {
       return jsonError("Report type is required", 400);
     }
 
+    // Filter sanitization (ignore empty strings)
+    const cleanFilters = {
+      startDate: startDate?.trim() || null,
+      endDate: endDate?.trim() || null,
+      warehouse: warehouse?.trim() || null,
+      category: category?.trim() || null,
+    };
+
     let data;
     let filename;
 
     switch (reportType) {
       case "inventory":
-        data = await generateInventoryReport(supabase, { warehouse, category });
+        data = await generateInventoryReport(supabase, cleanFilters);
         filename = `inventory_report_${new Date().toISOString().split('T')[0]}`;
         break;
         
       case "stock_movements":
-        data = await generateStockMovementsReport(supabase, { startDate, endDate, warehouse });
+        data = await generateStockMovementsReport(supabase, cleanFilters);
         filename = `stock_movements_${new Date().toISOString().split('T')[0]}`;
         break;
         
       case "sales":
-        data = await generateSalesReport(supabase, { startDate, endDate, warehouse });
+        data = await generateSalesReport(supabase, cleanFilters);
         filename = `sales_report_${new Date().toISOString().split('T')[0]}`;
         break;
         
       case "low_stock":
-        data = await generateLowStockReport(supabase, { warehouse });
+        data = await generateLowStockReport(supabase, cleanFilters);
         filename = `low_stock_alerts_${new Date().toISOString().split('T')[0]}`;
         break;
         
       case "receiving":
-        data = await generateReceivingReport(supabase, { startDate, endDate, warehouse });
+        data = await generateReceivingReport(supabase, cleanFilters);
         filename = `receiving_report_${new Date().toISOString().split('T')[0]}`;
         break;
         
       case "delivery":
-        data = await generateDeliveryReport(supabase, { startDate, endDate, warehouse });
+        data = await generateDeliveryReport(supabase, cleanFilters);
         filename = `delivery_report_${new Date().toISOString().split('T')[0]}`;
         break;
         
@@ -102,8 +112,8 @@ async function generateInventoryReport(supabase, filters = {}) {
   // Calculate inventory value
   return data.map(item => ({
     ...item,
-    total_value: Number(item.available_quantity) * (item.products?.cost_price || 0),
-    potential_revenue: Number(item.available_quantity) * (item.products?.selling_price || 0)
+    total_value: Number(item.available_quantity || 0) * (item.products?.cost_price || 0),
+    potential_revenue: Number(item.available_quantity || 0) * (item.products?.selling_price || 0)
   }));
 }
 
@@ -114,20 +124,20 @@ async function generateStockMovementsReport(supabase, filters = {}) {
       quantity,
       operation_type,
       notes,
-      occurred_at,
+      created_at,
       products!inner(name, sku, unit),
       warehouses(name),
       locations(name),
       created_by
     `)
-    .order('occurred_at', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(1000);
 
   if (filters.startDate) {
-    query = query.gte('occurred_at', filters.startDate);
+    query = query.gte('created_at', filters.startDate);
   }
   if (filters.endDate) {
-    query = query.lte('occurred_at', filters.endDate);
+    query = query.lte('created_at', filters.endDate);
   }
   if (filters.warehouse) {
     query = query.eq('warehouse_id', filters.warehouse);
@@ -182,6 +192,7 @@ async function generateLowStockReport(supabase, filters = {}) {
     .from('stock_levels')
     .select(`
       quantity,
+      warehouse_id,
       products!inner(name, sku, reorder_level, unit),
       warehouses(name)
     `);

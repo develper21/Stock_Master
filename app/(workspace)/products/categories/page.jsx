@@ -41,6 +41,8 @@ export default async function CategoriesPage() {
       <PageHeader
         title="Product Categories"
         description="Organize SKUs under standardized category taxonomy."
+        backHref="/products"
+        backLabel="Products"
         actions={
           isManager && (
             <Link

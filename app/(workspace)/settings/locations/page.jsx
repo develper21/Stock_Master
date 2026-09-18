@@ -45,6 +45,8 @@ export default async function LocationsPage() {
       <PageHeader
         title="Locations"
         description="Manage granular bins, racks, and zones inside each warehouse."
+        backHref="/dashboard"
+        backLabel="Dashboard"
         actions={
           isManager && (
             <Link

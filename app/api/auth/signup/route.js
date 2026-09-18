@@ -3,7 +3,9 @@ import { PASSWORD_REGEX } from "@/lib/constants";
 import { createUser } from "@/lib/auth-custom";
 import { getSupabaseServiceClient } from "@/lib/supabase/service-client";
 import { sendEmailVerification } from "@/lib/email-verification";
-export { dynamic } from "@/lib/api-runtime";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "default-no-store";
 
 const ROLES = ["inventory_manager", "warehouse_staff"];
 
