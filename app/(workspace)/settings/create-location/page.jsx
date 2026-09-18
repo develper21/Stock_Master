@@ -15,6 +15,8 @@ export default async function CreateLocationPage() {
       <PageHeader
         title="Add location"
         description="Define rack/bin identifiers inside warehouses to improve traceability."
+        backHref="/settings/locations"
+        backLabel="Locations"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <LocationForm warehouses={warehouses} />

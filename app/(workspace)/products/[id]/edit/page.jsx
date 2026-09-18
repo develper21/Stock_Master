@@ -8,10 +8,11 @@ export const metadata = {
 };
 
 export default async function EditProductPage({ params }) {
+  const resolvedParams = await params;
   const { supabase } = await getSessionAndProfile({ redirectToLogin: true });
 
   const [{ data: product }, { data: categories }] = await Promise.all([
-    supabase.from("products").select("*").eq("id", params.id).single(),
+    supabase.from("products").select("*").eq("id", resolvedParams.id).single(),
     supabase.from("product_categories").select("id, name").order("name", { ascending: true }),
   ]);
 
@@ -21,7 +22,12 @@ export default async function EditProductPage({ params }) {
 
   return (
     <div>
-      <PageHeader title={`Edit ${product.name}`} description="Update SKU details and thresholds." />
+      <PageHeader
+        title={`Edit ${product.name}`}
+        description="Update SKU details and thresholds."
+        backHref="/products"
+        backLabel="Products"
+      />
       <div className="rounded-3xl border border-white/5 bg-slate-900/40 p-8">
         <ProductForm categories={categories || []} product={product} />
       </div>

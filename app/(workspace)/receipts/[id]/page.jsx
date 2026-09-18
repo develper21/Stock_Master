@@ -10,15 +10,17 @@ import { notFound } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function ReceiptDetailPage({ params, searchParams }) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = (await searchParams) || {};
   const { supabase, profile } = await getSessionAndProfile({ redirectToLogin: true });
-  const isEditMode = searchParams?.edit === "true";
+  const isEditMode = resolvedSearchParams?.edit === "true";
 
   const { data: receipt } = await supabase
     .from("receipts")
     .select(
       "*, warehouses(name), receipt_items(*, products(name, sku, unit)), profiles:created_by(full_name, email)"
     )
-    .eq("id", params.id)
+    .eq("id", resolvedParams.id)
     .single();
 
   if (!receipt) {

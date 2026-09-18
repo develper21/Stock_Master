@@ -27,8 +27,9 @@ function buildParams(searchParams = {}) {
 }
 
 export default async function MoveHistoryPage({ searchParams }) {
-  const activeView = searchParams?.view === "kanban" ? "kanban" : "list";
-  const query = (searchParams?.q || "").trim();
+  const resolvedSearchParams = (await searchParams) || {};
+  const activeView = resolvedSearchParams?.view === "kanban" ? "kanban" : "list";
+  const query = (resolvedSearchParams?.q || "").trim();
 
   const { supabase } = await getSessionAndProfile({ redirectToLogin: true });
   const { data: transfers = [] } = await supabase
@@ -140,7 +141,7 @@ export default async function MoveHistoryPage({ searchParams }) {
     },
   ];
 
-  const params = buildParams(searchParams);
+  const params = buildParams(resolvedSearchParams);
   const clearParams = new URLSearchParams(params);
   clearParams.delete("q");
   const clearHref = `/ledger${clearParams.size ? `?${clearParams.toString()}` : ""}`;
@@ -166,6 +167,8 @@ export default async function MoveHistoryPage({ searchParams }) {
       <PageHeader
         title="Move History"
         description="Audit every stock relocation with quick filtering and flexible views."
+        backHref="/dashboard"
+        backLabel="Dashboard"
         actions={
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <form method="get" className="flex flex-1 items-center gap-2">
