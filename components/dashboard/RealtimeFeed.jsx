@@ -4,6 +4,39 @@ import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { Package, Truck, ArrowLeftRight, Sliders, ClipboardList } from "lucide-react";
 
+function getOperationDescription(data) {
+  const { operation_type, product_name, quantity, warehouse_name } = data;
+  
+  switch (operation_type) {
+    case "receipt":
+      return `Received ${quantity} units of ${product_name || "product"} at ${warehouse_name || "warehouse"}`;
+    case "delivery":
+      return `Delivered ${quantity} units of ${product_name || "product"} from ${warehouse_name || "warehouse"}`;
+    case "transfer":
+      return `Transferred ${quantity} units of ${product_name || "product"} to ${warehouse_name || "warehouse"}`;
+    case "adjustment":
+      return `Adjusted ${product_name || "product"} stock by ${Math.abs(quantity || 0)} units`;
+    default:
+      return `Updated ${product_name || "inventory"} at ${warehouse_name || "warehouse"}`;
+  }
+}
+
+function getOperationColor(data) {
+  const { operation_type } = data;
+  switch (operation_type) {
+    case "receipt":
+      return "text-emerald-400";
+    case "delivery":
+      return "text-blue-400";
+    case "transfer":
+      return "text-amber-400";
+    case "adjustment":
+      return "text-purple-400";
+    default:
+      return "text-slate-400";
+  }
+}
+
 export default function RealtimeFeed() {
   const [operations, setOperations] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -68,22 +101,7 @@ export default function RealtimeFeed() {
     };
   }, []);
 
-  const getOperationDescription = (data) => {
-    const { operation_type, product_name, quantity, warehouse_name } = data;
-    
-    switch (operation_type) {
-      case "receipt":
-        return `Received ${quantity} units of ${product_name || "product"} at ${warehouse_name || "warehouse"}`;
-      case "delivery":
-        return `Delivered ${quantity} units of ${product_name || "product"} from ${warehouse_name || "warehouse"}`;
-      case "transfer":
-        return `Transferred ${quantity} units of ${product_name || "product"} to ${warehouse_name || "warehouse"}`;
-      case "adjustment":
-        return `Adjusted ${product_name || "product"} stock by ${Math.abs(quantity || 0)} units`;
-      default:
-        return `Updated ${product_name || "inventory"} at ${warehouse_name || "warehouse"}`;
-    }
-  };
+
 
   const renderIcon = (type) => {
     switch (type) {
@@ -100,21 +118,7 @@ export default function RealtimeFeed() {
     }
   };
 
-  const getOperationColor = (data) => {
-    const { operation_type } = data;
-    switch (operation_type) {
-      case "receipt":
-        return "text-emerald-400";
-      case "delivery":
-        return "text-blue-400";
-      case "transfer":
-        return "text-amber-400";
-      case "adjustment":
-        return "text-purple-400";
-      default:
-        return "text-slate-400";
-    }
-  };
+
 
   return (
     <div className="space-y-4">
