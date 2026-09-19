@@ -8,11 +8,12 @@ export const metadata = {
 };
 
 export default async function EditCategoryPage({ params }) {
+  const resolvedParams = await params;
   const { supabase } = await getSessionAndProfile({ redirectToLogin: true });
   const { data: category } = await supabase
     .from("product_categories")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", resolvedParams.id)
     .single();
 
   if (!category) {
@@ -24,6 +25,8 @@ export default async function EditCategoryPage({ params }) {
       <PageHeader
         title={`Edit ${category.name}`}
         description="Keep category naming consistent for analytics."
+        backHref="/products/categories"
+        backLabel="Categories"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <CategoryForm category={category} />

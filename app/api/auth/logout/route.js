@@ -1,19 +1,15 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServerClient } from "@/lib/supabase/server-client";
-export { dynamic } from "@/lib/api-runtime";
+import { clearAuthCookie } from "@/lib/auth-server";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "default-no-store";
 
 export async function POST() {
-  try {
-    const supabase = getSupabaseServerClient();
-    const { error } = await supabase.auth.signOut();
+  const response = NextResponse.json({
+    message: "Logout successful.",
+  });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
+  clearAuthCookie(response);
 
-    return NextResponse.json({ message: "Logged out" }, { status: 200 });
-  } catch (err) {
-    console.error("Logout failed", err);
-    return NextResponse.json({ error: "Unexpected server error." }, { status: 500 });
-  }
+  return response;
 }

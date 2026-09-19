@@ -21,6 +21,8 @@ export default async function CreateReceiptPage() {
       <PageHeader
         title="Create receipt"
         description="Draft a goods receipt and capture each SKU entering the warehouse."
+        backHref="/receipts"
+        backLabel="Receipts"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <ReceiptForm

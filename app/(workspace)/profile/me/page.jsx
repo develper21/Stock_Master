@@ -15,6 +15,8 @@ export default async function ProfilePage() {
       <PageHeader
         title="My Profile"
         description="Manage your contact info, login ID, and default warehouse preference."
+        backHref="/dashboard"
+        backLabel="Dashboard"
       />
       <div className="space-y-6 rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <div className="grid gap-4 md:grid-cols-2">

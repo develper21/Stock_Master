@@ -9,13 +9,14 @@ import { notFound } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function TransferDetailPage({ params }) {
+  const resolvedParams = await params;
   const { supabase, profile } = await getSessionAndProfile({ redirectToLogin: true });
   const { data: transfer } = await supabase
     .from("internal_transfers")
     .select(
       "*, from:from_warehouse_id(name), to:to_warehouse_id(name), transfer_items(*, products(name, sku, unit))"
     )
-    .eq("id", params.id)
+    .eq("id", resolvedParams.id)
     .single();
 
   if (!transfer) {

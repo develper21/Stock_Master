@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { getSupabaseServiceClient } from "@/lib/supabase/service-client";
-import { getSupabaseServerClient } from "@/lib/supabase/server-client";
-export { dynamic } from "@/lib/api-runtime";
+import { authenticateUser } from "@/lib/auth-custom";
+import { setAuthCookie } from "@/lib/auth-server";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "default-no-store";
 
 export async function POST(req) {
   try {
@@ -11,37 +14,20 @@ export async function POST(req) {
       return NextResponse.json({ error: "Login ID and password are required." }, { status: 400 });
     }
 
-    const serviceClient = getSupabaseServiceClient();
-    const { data: profile, error: profileError } = await serviceClient
-      .from("profiles")
-      .select("email")
-      .eq("login_id", loginId)
-      .maybeSingle();
+    // Authenticate user with custom auth
+    const { user, token } = await authenticateUser(loginId, password);
 
-    if (profileError) {
-      return NextResponse.json({ error: profileError.message }, { status: 500 });
-    }
-
-    if (!profile) {
-      return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
-    }
-
-    const supabase = getSupabaseServerClient();
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email: profile.email,
-      password,
-    });
-
-    if (signInError) {
-      return NextResponse.json({ error: "Invalid credentials." }, { status: 401 });
-    }
-
-    return NextResponse.json({
+    // Set auth cookie
+    const response = NextResponse.json({
       message: "Login successful.",
-      user: data.user,
+      user,
     });
+
+    setAuthCookie(response, token);
+
+    return response;
   } catch (error) {
     console.error("Login failed", error);
-    return NextResponse.json({ error: "Unexpected server error." }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Invalid credentials." }, { status: 401 });
   }
 }

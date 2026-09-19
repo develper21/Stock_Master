@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import * as Icons from "lucide-react";
@@ -12,6 +12,22 @@ export default function Sidebar({ profile }) {
   const [activeFlyout, setActiveFlyout] = useState(null);
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [logoutError, setLogoutError] = useState(null);
+
+  // Close flyout on navigation
+  useEffect(() => {
+    setActiveFlyout(null);
+  }, [pathname]);
+
+  // Close flyout on escape key
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === "Escape") {
+        setActiveFlyout(null);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   async function handleLogout() {
     try {
@@ -32,7 +48,10 @@ export default function Sidebar({ profile }) {
   }
 
   return (
-    <aside className="sticky top-0 flex h-screen w-full flex-col border-r border-white/5 bg-slate-950/80 px-6 py-8 backdrop-blur">
+    <aside
+      className="sticky top-0 flex h-screen w-full flex-col border-r border-white/5 bg-slate-950/80 px-6 py-8 backdrop-blur"
+      onMouseLeave={() => setActiveFlyout(null)}
+    >
       <div>
         <p className="text-xs uppercase tracking-[0.4em] text-emerald-300">STOKIQ</p>
         <h2 className="mt-2 text-lg font-semibold text-white">Control Tower</h2>
@@ -82,11 +101,16 @@ function NavItem({
   logoutError = null,
 }) {
   const hasChildren = Array.isArray(item.children) && item.children.length > 0;
-  const isActive = pathname.startsWith(item.href);
+  const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
   const showProfileHover = isProfile;
   const isFlyoutOpen = hasChildren && activeFlyout === item.label;
+  const closeTimeoutRef = useRef(null);
 
   function handleMouseEnter() {
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
     if (hasChildren && typeof setActiveFlyout === "function") {
       setActiveFlyout(item.label);
     } else if (!hasChildren && typeof setActiveFlyout === "function") {
@@ -95,15 +119,23 @@ function NavItem({
   }
 
   function handleMouseLeave() {
-    if (!hasChildren && typeof setActiveFlyout === "function") {
-      setActiveFlyout(null);
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
     }
+    closeTimeoutRef.current = setTimeout(() => {
+      setActiveFlyout?.((current) => (current === item.label ? null : current));
+    }, 150);
   }
 
   return (
-    <div className="relative group" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <div
+      className="relative group"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <Link
         href={item.href}
+        onClick={() => setActiveFlyout?.(null)}
         className={`flex items-center gap-3 rounded-2xl px-3 py-2 transition ${
           isActive ? "bg-emerald-500/10 text-white" : "hover:bg-white/5 hover:text-white"
         }`}
@@ -115,29 +147,28 @@ function NavItem({
         )}
       </Link>
 
-      {hasChildren && (
+      {hasChildren && isFlyoutOpen && (
         <div
-          className={`absolute left-[calc(100%+0.5rem)] top-0 z-40 ${
-            isFlyoutOpen ? "flex" : "hidden"
-          } min-w-[230px] flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/95 p-4 text-xs text-slate-200 shadow-2xl`}
-          onMouseEnter={() => setActiveFlyout?.(item.label)}
-          onMouseLeave={() =>
-            setActiveFlyout?.((current) => (current === item.label ? null : current))
-          }
+          className="absolute left-full top-0 z-50 pl-2 min-w-[240px]"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
-          <div className="space-y-2">
-            <div className="text-[0.65rem] uppercase tracking-[0.35em] text-slate-500">{item.label}</div>
-            {item.children.map((child) => (
-              <Link
-                key={child.href}
-                href={child.href}
-                className={`block rounded-xl px-3 py-2 transition ${
-                  pathname === child.href ? "bg-emerald-500/10 text-white" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                {child.label}
-              </Link>
-            ))}
+          <div className="flex flex-col gap-2 rounded-2xl border border-white/10 bg-slate-900/95 p-4 text-xs text-slate-200 shadow-2xl backdrop-blur">
+            <div className="text-[0.65rem] uppercase tracking-[0.35em] text-slate-500 px-1">{item.label}</div>
+            <div className="space-y-1">
+              {item.children.map((child) => (
+                <Link
+                  key={child.href}
+                  href={child.href}
+                  onClick={() => setActiveFlyout?.(null)}
+                  className={`block rounded-xl px-3 py-2 transition ${
+                    pathname === child.href ? "bg-emerald-500/10 text-emerald-300 font-medium" : "text-slate-400 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  {child.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}

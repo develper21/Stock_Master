@@ -21,6 +21,8 @@ export default async function CreateAdjustmentPage() {
       <PageHeader
         title="Create adjustment"
         description="Record manual cycle-count corrections with full audit log updates."
+        backHref="/adjustments"
+        backLabel="Adjustments"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <AdjustmentForm

@@ -10,7 +10,7 @@ export default async function DeliveriesPage() {
   const { supabase } = await getSessionAndProfile({ redirectToLogin: true });
   const { data: deliveries = [] } = await supabase
     .from("deliveries")
-    .select("id, reference_no, customer, status, created_at, warehouses(name)")
+    .select("id, reference_no, customer_name, status, created_at, warehouses(name)")
     .order("created_at", { ascending: false });
 
   const columns = [
@@ -18,12 +18,16 @@ export default async function DeliveriesPage() {
       label: "Reference",
       accessor: "reference_no",
       render: (row) => (
-        <Link href={`/deliveries/${row.id}`} className="text-emerald-300 hover:text-emerald-200">
+        <Link href={`/deliveries/${row.id}`} className="text-emerald-300 hover:text-emerald-200 font-medium">
           {row.reference_no}
         </Link>
       ),
     },
-    { label: "Customer", accessor: "customer" },
+    { 
+      label: "Customer", 
+      accessor: "customer_name",
+      render: (row) => row.customer_name || "—" 
+    },
     {
       label: "Warehouse",
       accessor: "warehouse",
@@ -37,7 +41,7 @@ export default async function DeliveriesPage() {
     {
       label: "Created",
       accessor: "created_at",
-      render: (row) => new Date(row.created_at).toLocaleString(),
+      render: (row) => row.created_at ? new Date(row.created_at).toLocaleDateString() : "—",
     },
     {
       label: "Actions",
@@ -56,21 +60,21 @@ export default async function DeliveriesPage() {
   ];
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title="Deliveries"
         description="Plan, pick, pack, and ship customer orders with confidence."
         actions={
           <Link
             href="/deliveries/create"
-            className="rounded-2xl bg-gradient-to-r from-rose-400 to-rose-500 px-4 py-2 text-sm font-semibold text-white"
+            className="rounded-2xl bg-gradient-to-r from-rose-400 to-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:from-rose-300 hover:to-rose-400"
           >
             + New Delivery
           </Link>
         }
       />
 
-      <DataTable columns={columns} data={deliveries} emptyState="No deliveries yet." />
+      <DataTable columns={columns} data={deliveries || []} emptyState="No deliveries yet." />
     </div>
   );
 }

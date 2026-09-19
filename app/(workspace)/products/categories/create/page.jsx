@@ -14,6 +14,8 @@ export default async function CreateCategoryPage() {
       <PageHeader
         title="Add category"
         description="Group related SKUs for faster filtering and analytics."
+        backHref="/products/categories"
+        backLabel="Categories"
       />
       <div className="rounded-3xl border border-white/5 bg-slate-900/50 p-8">
         <CategoryForm />
