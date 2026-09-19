@@ -137,23 +137,22 @@ graph TB
         B --> C[UI Components]
         C --> D[Business Logic]
     end
-    
+
     subgraph "Authentication Layer"
         E[Supabase Auth] --> F[RLS Policies]
         F --> G[Session Management]
     end
-    
+
     subgraph "Data Layer"
         H[Supabase PostgreSQL] --> I[Stock Tables]
         I --> J[Ledger Tables]
         J --> K[User Tables]
     end
-    
+
     subgraph "Real-time Layer"
         L[Supabase Realtime] --> M[Live Updates]
         M --> N[Dashboard Sync]
     end
-    
     A --> E
     D --> H
     L --> A
@@ -398,8 +397,8 @@ CREATE POLICY "Only managers can validate" ON receipts
 CREATE POLICY "Warehouse isolation" ON stock_levels
   FOR SELECT USING (
     warehouse_id IN (
-      SELECT default_warehouse_id 
-      FROM profiles 
+      SELECT default_warehouse_id
+      FROM profiles
       WHERE id = auth.uid()
     )
   );
@@ -432,7 +431,7 @@ CREATE POLICY "Warehouse isolation" ON stock_levels
 // Real-time subscription example
 const subscription = supabase
   .channel('stock-changes')
-  .on('postgres_changes', 
+  .on('postgres_changes',
     { event: '*', schema: 'public', table: 'stock_levels' },
     (payload) => {
       // Update UI with new stock levels
@@ -451,7 +450,16 @@ const subscription = supabase
 
 ---
 
-## � Deployment
+## 📘 API Docs & Demo
+
+- Postman Published Documentation: https://documenter.getpostman.com/view/39189509/2sBXigMtds
+- Demo Video: https://youtu.be/jW3N5y22LoI?si=loHINSVVbZP197BR
+
+---
+
+## 🛣️ Roadmap Ideas
+
+## 🚀 Deployment
 
 ### 🌐 Production Deployment
 
